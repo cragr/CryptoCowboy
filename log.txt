@@ -1,0 +1,54 @@
+[ 2018-06-14 ][ 02:41:28 ]: We sold shares!
+[ 2018-06-14 ][ 02:41:28 ]: We gained $0 on that trade.
+[ 2018-06-14 ][ 02:41:28 ]: Cancelling outstanding orders. Sequence #13281
+ 
+[ 2018-06-14 ][ 02:41:53 ]: Placing an order to buy 0.3074 shares of XRP at $0.5277 for $0.1622
+[ 2018-06-14 ][ 02:42:23 ]: Placing an order to sell 0.1847 shares of XRP at $0.5624 for $0.1039
+[ 2018-06-14 ][ 11:58:04 ]: We sold shares!
+[ 2018-06-14 ][ 11:58:04 ]: We gained $0 on that trade.
+[ 2018-06-14 ][ 11:58:04 ]: Cancelling outstanding orders. Sequence #13284
+ 
+[ 2018-06-14 ][ 11:58:29 ]: Placing an order to buy 0.3006 shares of XRP at $0.5436 for $0.1634
+[ 2018-06-14 ][ 11:58:59 ]: Placing an order to sell 0.1925 shares of XRP at $0.5794 for $0.1115
+[ 2018-06-14 ][ 13:23:01 ]: We bought shares!
+[ 2018-06-14 ][ 13:23:01 ]: Cancelling outstanding orders. Sequence #13288
+ 
+[ 2018-06-14 ][ 13:23:26 ]: Placing an order to buy 0.3021 shares of XRP at $0.5258 for $0.1588
+[ 2018-06-14 ][ 13:23:56 ]: Placing an order to sell 0.1811 shares of XRP at $0.5614 for $0.1017
+[ 2018-06-14 ][ 17:12:28 ]: We sold shares!
+[ 2018-06-14 ][ 17:12:28 ]: We gained $0 on that trade.
+[ 2018-06-14 ][ 17:12:28 ]: Cancelling outstanding orders. Sequence #13290
+ 
+[ 2018-06-14 ][ 17:12:53 ]: Placing an order to buy 0.2938 shares of XRP at $0.5427 for $0.1595
+[ 2018-06-14 ][ 17:13:23 ]: Placing an order to sell 0.1885 shares of XRP at $0.5802 for $0.1094
+[ 2018-06-15 ][ 14:34:36 ]: We bought shares!
+[ 2018-06-15 ][ 14:34:36 ]: Cancelling outstanding orders. Sequence #13294
+ 
+[ 2018-06-15 ][ 14:35:02 ]: Placing an order to buy 0.2978 shares of XRP at $0.5218 for $0.1554
+[ 2018-06-15 ][ 14:35:32 ]: Placing an order to sell 0.1780 shares of XRP at $0.5566 for $0.0991
+[ 2018-06-15 ][ 15:57:02 ]: We sold shares!
+[ 2018-06-15 ][ 15:57:02 ]: We gained $0 on that trade.
+[ 2018-06-15 ][ 15:57:02 ]: Cancelling outstanding orders. Sequence #13296
+ 
+[ 2018-06-15 ][ 15:57:28 ]: Placing an order to buy 0.2932 shares of XRP at $0.5356 for $0.1570
+[ 2018-06-15 ][ 15:57:58 ]: Placing an order to sell 0.1847 shares of XRP at $0.5721 for $0.1057
+[ 2018-06-15 ][ 23:06:37 ]: We bought shares!
+[ 2018-06-15 ][ 23:06:37 ]: Cancelling outstanding orders. Sequence #13300
+ 
+[ 2018-06-15 ][ 23:07:02 ]: Placing an order to buy 0.2920 shares of XRP at $0.5197 for $0.1518
+[ 2018-06-15 ][ 23:07:32 ]: Placing an order to sell 0.1740 shares of XRP at $0.5555 for $0.0966
+[ 2018-06-16 ][ 16:05:13 ]: We bought shares!
+[ 2018-06-16 ][ 16:05:13 ]: Cancelling outstanding orders. Sequence #13303
+ 
+[ 2018-06-16 ][ 16:05:38 ]: Placing an order to buy 0.2827 shares of XRP at $0.5109 for $0.1444
+[ 2018-06-16 ][ 16:06:08 ]: Placing an order to sell 0.1638 shares of XRP at $0.5453 for $0.0893
+[ 2018-06-17 ][ 06:07:05 ]: Stoping Auto Trader, please wait...
+[ 2018-06-17 ][ 06:07:12 ]: Disconnecting from Ripple API
+[ 2018-06-17 ][ 06:07:12 ]: API disconnected.
+[ 2018-06-17 ][ 06:07:13 ]: Terminating Auto Trader
+[ 2018-06-17 ][ 06:11:11 ]: Autotrader is booting up.
+[ 2018-06-17 ][ 06:11:21 ]: Cancelling outstanding orders. Sequence #13305
+[ 2018-06-17 ][ 06:11:46 ]: Cancelling outstanding orders. Sequence #13306
+ 
+[ 2018-06-17 ][ 06:12:11 ]: Placing an order to buy 0.2184 shares of XRP at $0.5246 for $0.1146
+[ 2018-06-17 ][ 06:12:41 ]: Placing an order to sell 0.2014 shares of XRP at $0.5584 for $0.1125

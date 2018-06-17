@@ -1,0 +1,1133 @@
+<!doctype html>
+<html>
+	<head>
+		<title>
+			CryptoCowboy AutoTrader
+		</title>
+
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body { font: 13px Helvetica, Arial; font-weight: bold; }
+			h1 {font-size:30px;width:500px;color:#666;margin:0 auto 20px auto;}
+			form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+			form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+			form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+			#messages { list-style-type: none; margin: 0; padding: 0; }
+			#messages li { padding: 5px 10px; }
+			#messages li:nth-child(odd) { background: #eee; }
+		</style>
+	</head>
+	
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+			<script src="https://d3dy5gmtp8yhk7.cloudfront.net/2.1/pusher.min.js"></script>
+
+	<!--
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	-->
+	
+	<script>	
+		$(document).ready(function()
+		{
+			var pricePerShare = 0;
+			var marketValue = 0;
+			var netWorth = 0;
+			var USD = 0;
+			var XRP = 0;
+			var socket;
+			var totalTransactions = 0;
+			var fixedPoint = 0;
+			var hours = 0;
+			var reserveMultiplier = 0;
+			var reserve = 0.00;
+			var reserveXRP = 0.00;
+						
+			var dayTradeGains = 0;
+			
+			var BTCPrice = 0;
+
+			var orderPriceSell = 0.00;
+			var orderPricebuy = 0.00;
+			
+			var openOrderRange = 0.00;
+			var currentPricePercentage = 0.00;
+			var totalUSD = 0.00;
+			var totalXRP = 0.00;
+			var totalLiquid = 0.00;
+			var totalReserve = 0.00;
+						
+			var APR = 0.00;
+			var dayTradePercent = 0;
+
+			//	Socket IO
+			$(function () 
+			{
+				socket = io();
+				
+				$('form').submit(function()
+				{
+					if($('#textBox').val() == "teslaOnMoon")
+					{
+						//$( "#investmentDiv" ).show();
+					}
+					else
+					{
+						socket.emit('inputReceived', $('#textBox').val());	//	Emit textbox
+					}
+					
+					$('#textBox').val('');	//	Clear Text
+					
+					return false;
+				});
+				
+				socket.on('emit', function(msg)
+				{
+					if(msg == "We sold shares!")
+					{
+						$('#messages').append($('<li style="color:green;">').text(msg));
+					}
+					else if(msg == "We bought shares!")
+					{
+						$('#messages').append($('<li style="color:red;">').text(msg));
+					}
+					else if(msg.charAt(0) == '[')
+					{
+						$('#messages').append($('<li style="color:grey;">').text(msg));
+					}
+					else if(msg == "We gained $0 on that trade.")
+					{
+						//	Do nothing... This sucks.
+					}
+					else
+					{
+						$('#messages').append($('<li>').text(msg));
+					}
+					
+					var wtf = $('#messagesListDiv');
+					var height = wtf[0].scrollHeight;
+					wtf.scrollTop(height);
+				});
+				
+				socket.on('privateMessage', function(msg)
+				{
+					$('#messages').append($('<li>').text(msg));
+					
+					var wtf = $('#messagesListDiv');
+					var height = wtf[0].scrollHeight;
+					wtf.scrollTop(height);
+				});
+				
+				socket.on('USD', function(msg)
+				{
+					USD = msg;
+					USD = parseFloat(USD).toFixed(2);
+					$('#cashDiv').text("$" + USD);
+					
+					
+					
+					//Color reinvestment mult
+					let reinvestmentPrice = 0.00;
+					reinvestmentPrice = marketValue * reserveMultiplier;
+					
+					let reinvestmentPercentage = 0.00;
+					reinvestmentPercentage = (USD / reinvestmentPrice);
+					reinvestmentPercentage = (reinvestmentPercentage * 200.00);
+					reinvestmentPercentage = (reinvestmentPercentage - 100.00);
+					
+					let color = 0.00;
+					if(parseFloat(reinvestmentPercentage) > 0.00)
+					{
+						
+						color = Math.floor((parseFloat(reinvestmentPercentage) * 2.4));
+						color = rgbToHex(color);
+						color = "#00" + color + "00";
+						$("#reserveMultiplierDiv").css('color', (color));
+						
+						
+					}
+					else if(parseFloat(reinvestmentPercentage) < 0.00)
+					{
+						color = Math.floor(-parseFloat(reinvestmentPercentage) * 2.4);
+						
+						//$('#messages').append($('<li>').text(currentPricePercentage));
+						//$('#messages').append($('<li>').text(-parseFloat(currentPricePercentage)));
+
+						//$('#messages').append($('<li>').text(color));
+						
+						color = rgbToHex(color);
+						color = "#" + color + "0000";
+						
+						
+						//$('#messages').append($('<li>').text(color));
+						
+						$("#cashDiv").css('color', (color));
+					}
+					else
+					{
+						$("#cashDiv").css('color', 'black');
+					}
+					
+					
+				});
+				
+				socket.on('XRP', function(msg)
+				{
+					XRP = msg;
+					XRP = parseFloat(XRP).toFixed(2);
+					$('#sharesDiv').text("x" + XRP);
+				});
+				
+				socket.on('reserve', function(msg)
+				{
+					reserve = parseFloat(msg).toFixed(2);
+					$('#reserveDiv').text("$" + reserve);
+				});
+				
+				socket.on('reserveXRP', function(msg)
+				{
+					reserveXRP = parseFloat(msg).toFixed(2);
+					$('#reserveXRPDiv').text("x" + reserveXRP);
+				});
+				
+				socket.on('fixedPoint', function(msg)
+				{
+					fixedPoint = msg;
+					$('#fixedPointDiv').text(parseFloat(msg).toFixed(2));
+				});
+				
+				socket.on('range', function(msg)
+				{
+					$('#rangeDiv').text(parseFloat(msg).toFixed(2));
+					$('#rangePercentageDiv').text(((parseFloat(msg) * 100.00) / parseFloat(marketValue)).toFixed(2) + "%");
+				});
+
+				socket.on('salesMultiplier', function(msg)
+				{
+					$('#salesMultiplierDiv').text(parseFloat(msg).toFixed(4));
+				});
+
+				socket.on('orderPriceBuy', function(msg)
+				{
+					$('#orderPriceBuyDiv').text(parseFloat(msg).toFixed(5));
+					orderPricebuy = parseFloat(parseFloat(msg).toFixed(5));
+				});
+
+				socket.on('orderPriceSell', function(msg)
+				{
+					$('#orderPriceSellDiv').text(parseFloat(msg).toFixed(5));
+					
+					
+					//let orderPriceSell = document.getElementById("orderPriceSellDiv");
+					
+					//$( "#orderPriceSellDiv" ).text
+					orderPriceSell = parseFloat(parseFloat(msg).toFixed(5));
+					openOrderRange = parseFloat(orderPriceSell - orderPricebuy);
+					currentPricePercentage = parseFloat((pricePerShare.toFixed(5)) - orderPricebuy) / openOrderRange;
+					currentPricePercentage = ((currentPricePercentage * 200.00) - 100.00).toFixed(2);	//	 To 200%
+					
+					
+					//$('#messages').append($('<li>').text(orderPricebuy.toFixed(4)));
+					//$('#messages').append($('<li>').text(orderPriceSell.toFixed(4)));
+					//$('#messages').append($('<li>').text(openOrderRange));
+					//$('#messages').append($('<li>').text(pricePerShare.toFixed(4)));
+					//$('#messages').append($('<li>').text(currentPricePercentage));
+					
+					
+					//$('#orderSplitDiv').text(currentPricePercentage.toFixed(2) + "%");
+					//$('#orderSplitDiv').text(currentPricePercentage + "%");
+					
+					let color = 0.00;
+					
+					if(parseFloat(currentPricePercentage) > 0.00)
+					{
+						
+						color = Math.floor((parseFloat(currentPricePercentage) * 2.4));
+						color = rgbToHex(color);
+						color = "#00" + color + "00";
+						$("#currentPriceDiv").css('color', (color));
+						
+						
+					}
+					else if(parseFloat(currentPricePercentage) < 0.00)
+					{
+						color = Math.floor(-parseFloat(currentPricePercentage) * 2.4);
+						
+						//$('#messages').append($('<li>').text(currentPricePercentage));
+						//$('#messages').append($('<li>').text(-parseFloat(currentPricePercentage)));
+
+						//$('#messages').append($('<li>').text(color));
+						
+						color = rgbToHex(color);
+						color = "#" + color + "0000";
+						
+						
+						//$('#messages').append($('<li>').text(color));
+						
+						$("#currentPriceDiv").css('color', (color));
+					}
+					else
+					{
+						$("#currentPriceDiv").css('color', 'black');
+					}
+				});
+				
+				socket.on('reserveMultiplier', function(msg)
+				{
+					reserveMultiplier = Number(msg.toFixed(3));
+					$('#reserveMultiplierDiv').text(msg);
+				});
+				
+				
+				socket.on('hours', function(msg)
+				{
+					if(parseFloat(msg) >= (24.00 * 365.25))
+					{
+						hours = (msg.toFixed(2) / (24.00 * 365.25)).toFixed(2);	//	years
+						$('#hoursDiv').text(hours + " years");
+					}
+					else if(parseFloat(msg) >= (24.00 * 30.4375))
+					{
+						hours = (msg.toFixed(2) / (24.00 * 30.4375)).toFixed(2);	//	months
+						$('#hoursDiv').text(hours + " months");
+					}
+					else if(parseFloat(msg) >= (24.00 * 7.00))
+					{
+						hours = (msg.toFixed(2) / (24.00 * 7.00)).toFixed(2);	//	weeks
+						$('#hoursDiv').text(hours + " weeks");
+					}
+					else if(parseFloat(msg) >= 24.00)
+					{
+						hours = (msg.toFixed(2) / 24).toFixed(2);	//	days
+						$('#hoursDiv').text(hours + " days");
+					}
+					else if(parseFloat(msg) <= 24.00)
+					{
+						hours = msg.toFixed(2);	//	hours
+						$('#hoursDiv').text(hours + " hours");
+					}
+					
+					
+					hours = (msg.toFixed(2) / 24).toFixed(2);	//	days
+					
+				});
+				
+				socket.on('pricePerShare', function(msg)
+				{
+				
+					/*
+					<div>
+						Current XRP Price:
+						#ff0000 Red
+						#00ff00 Green
+						<div id=currentPriceDiv style="color:#b241f4;">
+							Waiting for incoming data...
+						</div>
+					</div>
+					*/
+					
+					//$("#currentPriceDiv").css('color', 'red');
+					//currentPricePercentage
+					let color = 0.00;
+					
+					if(parseFloat(currentPricePercentage) > 0.00)
+					{
+						
+						color = Math.floor((parseFloat(currentPricePercentage) * 2.4));
+						color = rgbToHex(color);
+						color = "#00" + color + "00";
+						$("#currentPriceDiv").css('color', (color));
+						
+						
+					}
+					else if(parseFloat(currentPricePercentage) < 0.00)
+					{
+						color = Math.floor(-parseFloat(currentPricePercentage) * 2.4);
+						
+						//$('#messages').append($('<li>').text(currentPricePercentage));
+						//$('#messages').append($('<li>').text(-parseFloat(currentPricePercentage)));
+
+						//$('#messages').append($('<li>').text(color));
+						
+						color = rgbToHex(color);
+						color = "#" + color + "0000";
+						
+						
+						//$('#messages').append($('<li>').text(color));
+						
+						$("#currentPriceDiv").css('color', (color));
+					}
+					else
+					{
+						$("#currentPriceDiv").css('color', 'black');
+					}
+
+
+					//$('#messages').append($('<li>').text(color));
+					//$('#messages').append($('<li>').text("#0000" + "FF"));
+					//$("#currentPriceDiv").css('color', 'red');
+					
+					
+					
+					
+					pricePerShare = msg;
+					marketValue = XRP * pricePerShare;
+					
+					
+					totalUSD = parseFloat(USD) + parseFloat(reserve);
+					totalUSDDiv.innerHTML = "$" +  totalUSD.toFixed(2);
+					
+					totalXRP = parseFloat(XRP) + parseFloat(reserveXRP);
+					totalXRPDiv.innerHTML = "x" +  totalXRP.toFixed(2);
+					
+					totalLiquid = parseFloat(USD) + (parseFloat(XRP) * parseFloat(pricePerShare));
+					marketValueDiv.innerHTML = "$" +  totalLiquid.toFixed(2);
+					
+					totalReserve = parseFloat(reserve) + (parseFloat(reserveXRP) * parseFloat(pricePerShare));
+					totalReserveDiv.innerHTML = "$" +  totalReserve.toFixed(2);
+					
+					netWorth = parseFloat(marketValue) + parseFloat(USD) + parseFloat(reserve) + (parseFloat(reserveXRP) * parseFloat(pricePerShare));
+				
+					currentPriceDiv.innerHTML = "$" +  pricePerShare.toFixed(5);
+					
+					netWorthDiv.innerHTML = "$" +  netWorth.toFixed(2);
+					
+					totalTransactionsDiv.innerHTML = totalTransactions;
+					
+					
+					var transactionsPerDay = (totalTransactions / hours).toFixed(2);
+					transactionsPerDayDiv.innerHTML = transactionsPerDay;
+					
+					targetTDDiv.innerHTML = (24.00 / (((((parseFloat(fixedPoint) * parseFloat(reserveMultiplier)) / 2.00) / parseFloat(USD)) * 10.00 * 10.00) / 60.00)).toFixed(3);
+					
+					getBTC();
+					//***********************************************************			
+
+					
+				});
+				
+				socket.on('beep', function(msg)
+				{
+					beep();
+					totalTransactions = msg;
+				});
+				
+				socket.on('dayTradeGains', function(msg)
+				{
+					dayTradeGains = msg;
+					
+					dayTradePercent = 0;
+					var gainPerDay = 0;
+					
+					if(hours != 0)
+					{
+						gainPerDay = (dayTradeGains / hours).toFixed(2);
+						
+						dayTradePercent = ((dayTradeGains / (netWorth)) * 100);
+						dayTradePercent = ((dayTradePercent / hours).toFixed(4));
+					}
+					
+					APR = (Math.pow((1 + ((dayTradePercent * (1 / (1 + reserveMultiplier))) / 100)), 365) * 100) - 100;	//	
+					//-------------------
+
+					dayTradeGainsDiv.innerHTML = "$" + msg.toFixed(2);
+					gainPerDayDiv.innerHTML = "$" + gainPerDay;
+					//percentGainsDiv.innerHTML = dayTradePercent + "%";
+					APRDiv.innerHTML = APR.toFixed(2) + "%";
+					
+					
+					daysUntilTenDiv.innerHTML = timeUntilGoal(10000, netWorth);
+					daysUntilHundredDiv.innerHTML = timeUntilGoal(100000, netWorth);
+					daysUntilMillionDiv.innerHTML = timeUntilGoal(1000000, netWorth);
+					//-------------------
+				});
+				
+				socket.on('userCount', function(msg)
+				{
+
+					userCountDiv.innerHTML = msg;
+				});
+				
+				socket.on('connectionStatus', function(msg)
+				{
+
+					connectionStatusDiv.innerHTML = msg;
+				});
+				
+				socket.on('autoTraderStatus', function(msg)
+				{
+
+					autoTraderStatusDiv.innerHTML = msg;
+				});
+				
+		
+			});
+			
+			function getBTC()
+			{
+				$.getJSON('https://api.coindesk.com/v1/bpi/currentprice.json', function(data) 
+				{
+					BTCPrice = parseFloat(data.bpi.USD.rate.replace(/,/g, '')).toFixed(2);
+					//BTCPriceDiv.innerHTML = "$" +  BTCPrice;
+					//console.log(data.bpi.USD.rate);
+					//BTCPrice = parseFloat(data.bpi.USD.rate);
+				});
+			}
+
+/*
+			$( "#videoButton" ).click(function() 
+			{
+				$( "#videoDiv" ).remove();
+			});
+			*/
+			
+			$( "#investmentDiv" ).hide();
+			
+			function beep()
+			{
+				var snd = new Audio("data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=");  
+				snd.play();
+			}
+			
+			function rgbToHex(rgb) 
+			{ 
+				var hex = Number(rgb).toString(16);
+				
+				if (hex.length < 2)
+				{
+					hex = "0" + hex;
+				}
+				return hex;
+			};
+			
+			
+			function timeUntilGoal(goalValue, currentValue) 
+			{ 
+				let timeUntil = (Math.log(goalValue / (currentValue))) / Math.log(1 + (dayTradePercent / 100.00));
+	
+				if(timeUntil >= 365.25)
+				{
+					timeUntil = ((timeUntil / 365.25).toFixed(2)) + " years";
+				}
+				else if(timeUntil >= 30.43)
+				{
+					timeUntil = ((timeUntil / 30.43).toFixed(2)) + " months";
+				}
+				else
+				{
+					timeUntil = timeUntil + " days";
+				}
+				
+				return timeUntil;
+			};
+			
+			
+			
+		});
+	</script>
+	
+	<body>
+		<h1>
+			CryptoCowboy AutoTrader
+		</h1>
+		<table style="width:100%">
+			<tr>
+				<th style="width:40%;">
+					<div  id="messagesListDiv" style="height:800px; width:90%; border:1px solid #ccc; overflow-y:scroll;">
+						<ul id="messages"></ul>
+					</div>
+				</th>
+				<th style="width:30%">
+				
+					<table style="width:100%" border="1">
+						<tr>
+							<th>
+								Buy Price
+							</th>
+							<th>
+								XRP Price
+							</th> 
+							<th>
+								Sell Price
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								<div id=orderPriceBuyDiv>
+									Buy Price
+								</div>
+							</th>
+							<th>
+								<div id=currentPriceDiv>
+									XRP Price
+								</div>
+							</th> 
+							<th>
+								<div id=orderPriceSellDiv>
+									Sell Price
+								</div>
+							</th>
+						</tr>
+					</table>
+					
+					<br>
+					<br>
+					
+					<table style="width:100%" border="1">
+						<tr>
+							<th>
+								
+							</th>
+							<th>
+								USD
+							</th> 
+							<th>
+								XRP
+							</th>
+							<th>
+								Total
+							</th>
+						</tr>
+						<tr>
+							<th>
+								Market
+							</th>
+							<th>
+								<div id=cashDiv>
+									Waiting for incoming data...
+								</div>
+							</th> 
+							<th>
+								<div id=sharesDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+							<th>
+								<div id=marketValueDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+						</tr>
+						<tr>
+							<th>
+								Reserve
+							</th>
+							<th>
+								<div id=reserveDiv>
+									Waiting for incoming data...
+								</div>
+							</th> 
+							<th>
+								<div id=reserveXRPDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+							<th>
+								<div id=totalReserveDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+						</tr>
+						<tr>
+							<th>
+								Total
+							</th>
+							<th>
+								<div id=totalUSDDiv>
+									Waiting for incoming data...
+								</div>
+							</th> 
+							<th>
+								<div id=totalXRPDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+							<th>
+								<div id=netWorthDiv>
+									Waiting for incoming data...
+								</div>
+							</th>
+						</tr>
+					</table>
+					
+					
+					<!--
+					<div>
+						BTC Price:
+						<div id=BTCPriceDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					-->
+
+					
+					<br>
+					<br>
+
+
+					
+						<tr>
+							<th>
+								
+							</th>
+							<th>
+								Brown
+							</th>
+							<th>
+								Kyle
+							</th>
+							<th>
+								Jesse
+							</th>
+							<th>
+								Niko
+							</th>
+						</tr>
+
+						<tr>
+							<th>
+								Percent
+							</th>
+							<th>
+								<div id=brownPercentDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kylePercentDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jessePercentDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoPercentDiv>
+									Loading...
+								</div>
+							</th>
+							
+							
+							
+						<tr>
+							<th>
+								Value
+							</th>
+							<th>
+								<div id=brownCurrentValueDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleCurrentValueDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseCurrentValueDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoCurrentValueDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								Average Price
+							</th>
+							<th>
+								<div id=brownAverageCostDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleAverageCostDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseAverageCostDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoAverageCostDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th></th>
+							<th></th> 
+							<th></th>
+							<th></th>
+							<th></th>
+						</tr>
+						
+						<tr>
+							<th>
+								Profit (USD)
+							</th>
+							<th>
+								<div id=brownTotalProfitDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleTotalProfitDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseTotalProfitDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoTotalProfitDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								Profit (XRP)
+							</th>
+							<th>
+								<div id=brownDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								Profit (BTC)
+							</th>
+							<th>
+								<div id=brownBTCDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleBTCDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseBTCDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoBTCDifferenceDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th></th>
+							<th></th> 
+							<th></th>
+							<th></th>
+							<th></th>
+						</tr>
+						
+						<tr>
+							<th>
+								Time until $10K
+							</th>
+							<th>
+								<div id=brownDaysUntilTenDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleDaysUntilTenDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseDaysUntilTenDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoDaysUntilTenDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								Time until $100K
+							</th>
+							<th>
+								<div id=brownDaysUntilHundredDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleDaysUntilHundredDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseDaysUntilHundredDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoDaysUntilHundredDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+						<tr>
+							<th>
+								Time until $1M
+							</th>
+							<th>
+								<div id=brownDaysUntilMillionDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=kyleDaysUntilMillionDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=jesseDaysUntilMillionDiv>
+									Loading...
+								</div>
+							</th>
+							<th>
+								<div id=nikoDaysUntilMillionDiv>
+									Loading...
+								</div>
+							</th>
+						</tr>
+						
+					</table>
+					
+				</th>
+				<th style="width:15%">					
+					<div>
+						Total gain:
+						<div id=dayTradeGainsDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Daily gains:
+						<div id=gainPerDayDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+
+					<!--
+					<div>
+						 DPR:
+						<div id=percentGainsDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					-->
+					
+					<div>
+						 APR:
+						<div id=APRDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						 Time until $10,000:
+						<div id=daysUntilTenDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						 Time until $100,000:
+						<div id=daysUntilHundredDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						 Time until $1,000,000:
+						<div id=daysUntilMillionDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+				
+
+				</th>
+				
+				<th style="width:15%">
+					
+					<div>
+						Run time:
+						<div id=hoursDiv>
+							0
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Connection Status:
+						<div id=connectionStatusDiv>
+							Not connected
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Auto Trader:
+						<div id=autoTraderStatusDiv>
+							Disabled
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Users Online:
+						<div id=userCountDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Total Transactions:
+						<div id=totalTransactionsDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Transactions per Day:
+						<div id=transactionsPerDayDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Target T/D:
+						<div id=targetTDDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Fixed Point:
+						<div id=fixedPointDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Range:
+						<div id=rangeDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+					
+					<div>
+						Range Percentage:
+						<div id=rangePercentageDiv>
+							Waiting for incoming data...
+						</div>
+					</div>
+					
+					<br>
+
+					<div>
+						Sales Multiplier:
+						<div id=salesMultiplierDiv>
+							Sales multiplier
+						</div>
+					</div>
+					<br>
+					<div>
+						Reinvestment multiplier:
+						<div id=reserveMultiplierDiv>
+							Disabled
+						</div>
+					</div>
+					
+					<br>	
+
+				</th>
+			</tr>
+		</table>
+		
+		<form action="">
+			<input id="textBox" autocomplete="off" />
+			
+			<button>
+				Send
+			</button>
+		</form>
+		
+	</body>
+</html>
