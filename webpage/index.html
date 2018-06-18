@@ -393,11 +393,20 @@
 					
 					totalTransactionsDiv.innerHTML = totalTransactions;
 					
+					let maxCash = (fixedPoint * reserveMultiplier);
+					let timeWarp = ((maxCash / 2.00) / USD);	//	Up to double speed (5min) when things are good (when TW = 0.5)
+					let timeoutTime = 300000.00;	//	Every 5.0 min
+					timeoutTime = (timeoutTime * timeWarp);
+					timeoutTime = parseInt(timeoutTime);
 					
+					timeoutTime =  timeoutTime + 300000.00;	//	Add fixed time of 5 min
+					let targetTD = ((24.00 * 60.00 * 60.00) / (timeoutTime / 1000.00) / 10.00);
+	
+	
 					var transactionsPerDay = (totalTransactions / hours).toFixed(2);
 					transactionsPerDayDiv.innerHTML = transactionsPerDay;
 					
-					targetTDDiv.innerHTML = (24.00 / (((((parseFloat(fixedPoint) * parseFloat(reserveMultiplier)) / 2.00) / parseFloat(USD)) * 10.00 * 10.00) / 60.00)).toFixed(3);
+					targetTDDiv.innerHTML = (targetTD).toFixed(3);
 					
 					getBTC();
 					//***********************************************************			
