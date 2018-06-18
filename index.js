@@ -608,7 +608,7 @@ function buy()
 	orderPriceBuy = buyPrice;
 
 	let shares = Math.floor(range / buyPrice);	//	Shares to trade
-	shares = shares * salesMultiplier * fixedPointSwayBuy;
+	shares = shares * salesMultiplier * fixedPointSwayBuy * fixedPointSwayBuy;
 	
 	if(shares == 0)
 	{
@@ -653,7 +653,7 @@ function sell()
 	let fixedPointSwaySell = (marketValue / fixedPoint);		//	Larger when MV is High
 	
 	let shares = Math.floor(range / sellPrice);	//	Shares to trade
-	shares = shares * salesMultiplier * fixedPointSwaySell;
+	shares = shares * salesMultiplier * fixedPointSwaySell * fixedPointSwaySell;
 	
 	if(shares == 0)
 	{
