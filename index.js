@@ -638,9 +638,11 @@ function decreaseRange()
 	
 	//let timeoutTime = 450000.00;	//	Every 7.5 min
 	//	Max speed is every 5 min
-	let timeoutTime = 600000.00;	//	Every 10.0 min
+	let timeoutTime = 300000.00;	//	Every 5.0 min
 	timeoutTime = (timeoutTime * timeWarp);
 	timeoutTime = parseInt(timeoutTime);
+	
+	timeoutTime =  timeoutTime + 300000.00;	//	Add fixed time of 5 min
 	
 	setTimeout(decreaseRange, timeoutTime);
 	//setTimeout(decreaseRange, 900000);	//	Every 15 min
